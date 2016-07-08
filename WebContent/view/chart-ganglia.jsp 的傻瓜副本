@@ -1,0 +1,2657 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../js/jquery-1.11.2.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="../js/bootstrap.min.js"></script>
+<link href="../css/bootstrap.min.css" rel="stylesheet">
+<script type="text/javascript" src="../js/highcharts.js"></script>
+<style>
+div .chart {
+	float: left;
+	padding: 5px;
+	margin: 20px;
+}
+</style>
+<title>实时监控</title>
+</head>
+<body>
+	<jsp:include page="header.jsp" flush="true" />
+	<div class="container">
+			<div class="btn-group btn-group-justified" role="group">
+			<a href="chart-daemon.jsp" class="btn btn-default" role="button">Daemon</a>
+			<a href="chart-impala.jsp" class="btn btn-default" role="button">Impala</a>
+			<a href="chart-memcache.jsp" class="btn btn-default" role="button">Memcache</a>
+			<a href="#" class="btn btn-default" role="button">服务器情况</a>
+			<a href="chart-hdfs.jsp" class="btn btn-default" role="button">HDFS用量</a>
+		</div>
+		<h2>物理节点信息</h2>
+		<div id="nodemem-chart-all" class="chart"
+			style="width: 800px; height: 600px; margin: 10 auto"></div>
+	</div>
+
+	<script>
+		$(document)
+				.ready(
+						function() {
+							setInterval(function() {
+								$.ajax({
+									type : "GET",
+									url : "AllState",
+									dataType : "json",
+									success : function(data) {
+										var storage = window.localStorage;
+										storage.setItem("ganglia", JSON
+												.stringify(data.Ganglia));
+									}
+								});
+							}, 5000);
+							Highcharts.setOptions({
+								global : {
+									useUTC : false
+								},
+								lang:{
+								       contextButtonTitle:"图表导出菜单",
+								       decimalPoint:".",
+								       downloadJPEG:"下载JPEG图片",
+								       downloadPDF:"下载PDF文件",
+								       downloadPNG:"下载PNG文件",
+								       downloadSVG:"下载SVG文件",
+								       drillUpText:"返回 {series.name}",
+								       loading:"加载中",
+								       months:["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"],
+								       noData:"没有数据",
+								       numericSymbols: [ "千" , "兆" , "G" , "T" , "P" , "E"],
+								       resetZoom:"恢复缩放",
+								       resetZoomTitle:"恢复图表",
+								       shortMonths: [ "Jan" , "Feb" , "Mar" , "Apr" , "May" , "Jun" , "Jul" , "Aug" , "Sep" , "Oct" , "Nov" , "Dec"],
+								       thousandsSep:",",
+								       weekdays: ["星期一", "星期二", "星期三", "星期三", "星期四", "星期五", "星期六","星期天"]
+								    }
+							});
+							//ganglia
+							//74
+							var ganglia_74 = {
+								chart : {
+									renderTo : 'ganglia-74',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[0].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[0].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[0].cpu_user)
+																+ parseFloat(ganglia[0].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[0].mem_free
+																/ ganglia[0].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '74 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '74 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '74 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '74 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '74 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '74 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//75
+							var ganglia_75 = {
+								chart : {
+									renderTo : 'ganglia-75',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[1].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[1].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[1].cpu_user)
+																+ parseFloat(ganglia[1].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[1].mem_free
+																/ ganglia[1].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '75 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '75 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '75 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '75 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '75 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '75 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//76
+							var ganglia_76 = {
+								chart : {
+									renderTo : 'ganglia-76',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[2].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[2].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[2].cpu_user)
+																+ parseFloat(ganglia[2].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[2].mem_free
+																/ ganglia[2].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '76 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '76 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '76 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '76 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '76 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '76 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//85
+							var ganglia_85 = {
+								chart : {
+									renderTo : 'ganglia-85',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[3].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[3].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = ganglia[3].cpu_user
+																+ ganglia[3].cpu_system;
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[3].mem_free
+																/ ganglia[3].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '85 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '85 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '85 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '85 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '85 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '85 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//86
+							var ganglia_86 = {
+								chart : {
+									renderTo : 'ganglia-86',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[4].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[4].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[4].cpu_user)
+																+ parseFloat(ganglia[4].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[4].mem_free
+																/ ganglia[4].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '86 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '86 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '86 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '86 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '86 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '86 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//60
+							var ganglia_60 = {
+								chart : {
+									renderTo : 'ganglia-60',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[5].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[5].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[5].cpu_user)
+																+ parseFloat(ganglia[5].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[5].mem_free
+																/ ganglia[5].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '60 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '60 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '60 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '60 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '60 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '60 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//61
+							var ganglia_61 = {
+								chart : {
+									renderTo : 'ganglia-61',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[6].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[6].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[6].cpu_user)
+																+ parseFloat(ganglia[6].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[6].mem_free
+																/ ganglia[6].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '61 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '61 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '61 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '61 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '61 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '61 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//70
+							var ganglia_70 = {
+								chart : {
+									renderTo : 'ganglia-70',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[7].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[7].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[7].cpu_user)
+																+ parseFloat(ganglia[7].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[7].mem_free
+																/ ganglia[7].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '70 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '70 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '70 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '70 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '70 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '70 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//62
+							var ganglia_62 = {
+								chart : {
+									renderTo : 'ganglia-62',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[8].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[8].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[8].cpu_user)
+																+ parseFloat(ganglia[8].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[8].mem_free
+																/ ganglia[8].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '62 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '62 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '62 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '62 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '62 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '62 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+
+							//71
+							var ganglia_71 = {
+								chart : {
+									renderTo : 'ganglia-71',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[9].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[9].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[9].cpu_user)
+																+ parseFloat(ganglia[9].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[9].mem_free
+																/ ganglia[9].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '71 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '71 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '71 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '71 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '71 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '71 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//72
+							var ganglia_72 = {
+								chart : {
+									renderTo : 'ganglia-72',
+									type : 'spline',
+
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[10].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[10].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[10].cpu_user)
+																+ parseFloat(ganglia[10].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[10].mem_free
+																/ ganglia[10].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '72 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '72 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '72 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '72 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '72 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '72 Memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//73
+							var ganglia_73 = {
+								chart : {
+									renderTo : 'ganglia-73',
+									type : 'spline',
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series_out = this.series[0];
+											var series_in = this.series[1];
+											var series_diskread = this.series[2];
+											var series_diskwrite = this.series[3];
+											var series_cpu = this.series[4];
+											var series_memory = this.series[5];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var x = (new Date())
+																.getTime(), y;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														y = ganglia[11].bytes_out / 1024;
+														series_out.addPoint([
+																x, y ], true,
+																true);
+														y = ganglia[11].bytes_in / 1024;
+														series_in
+																.addPoint([ x,
+																		y ],
+																		true,
+																		true);
+														series_diskread
+																.addPoint([ x,
+																		0 ],
+																		true,
+																		true);
+														series_diskwrite
+																.addPoint([ x,
+																		0 ],
+																		true,
+																		true);
+														y = parseFloat(ganglia[11].cpu_user)
+																+ parseFloat(ganglia[11].cpu_system);
+														series_cpu.addPoint([
+																x, y ], true,
+																true);
+														y = (1 - ganglia[11].mem_free
+																/ ganglia[11].mem_total) * 100;
+														series_memory.addPoint(
+																[ x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时网络I/O，磁盘I/O，CPU，内存信息'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : [ {
+									title : {
+										text : 'KB/s'
+									},
+									labels : {
+										format : "{value} KB"
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								}, {
+									title : {
+										text : '%',
+										style : {
+											color : '#4572A7'
+										}
+									},
+									labels : {
+										format : "{value} %",
+										style : {
+											color : '#4572A7'
+										}
+									},
+									opposite : true
+								} ],
+								tooltip : {
+									shared : true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '73 out/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '73 in/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '73 disk_read/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '73 dist_write/s',
+											yAxis : 0,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '73 CPU%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '73 memory%',
+											yAxis : 1,
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+
+							var node_memory_pie = {
+								chart : {
+									renderTo : 'nodemem-chart-all',
+									plotBackgroundColor : null,
+									plotBorderWidth : null,
+									plotShadow : false,
+									events : {
+										load : function() {
+											// set up the updating of the chart each second
+											var series = this.series[0];
+											setInterval(
+													function() {
+														var storage = window.localStorage;
+														var ganglia = JSON
+																.parse(storage
+																		.getItem("ganglia"));
+														var data = [];
+
+														var sum = (ganglia[0].mem_total
+																+ ganglia[1].mem_total
+																+ ganglia[2].mem_total
+																+ ganglia[3].mem_total
+																+ ganglia[4].mem_total
+																+ ganglia[5].mem_total
+																+ ganglia[6].mem_total
+																+ ganglia[7].mem_total
+																+ ganglia[8].mem_total
+																+ ganglia[9].mem_total
+																+ ganglia[10].mem_total + ganglia[11].mem_total) / 1024 / 1024;
+														var ever0 = ganglia[0].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														data
+																.push([
+																		ganglia[0].hostName,
+																		ever0 ]);
+														var ever1 = ganglia[1].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														data
+																.push([
+																		ganglia[1].hostName,
+																		ever1 ]);
+														var ever2 = ganglia[2].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														data
+																.push([
+																		ganglia[2].hostName,
+																		ever2 ]);
+														var ever3 = ganglia[3].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														data
+																.push([
+																		ganglia[3].hostName,
+																		ever3 ]);
+														var ever4 = ganglia[4].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														data
+																.push([
+																		ganglia[4].hostName,
+																		ever4 ]);
+														var ever5 = ganglia[5].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														;
+														data
+																.push([
+																		ganglia[5].hostName,
+																		ever5 ]);
+														var ever6 = ganglia[6].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														;
+														data
+																.push([
+																		ganglia[6].hostName,
+																		ever6 ]);
+														var ever7 = ganglia[7].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														;
+														data
+																.push([
+																		ganglia[7].hostName,
+																		ever7 ]);
+														var ever8 = ganglia[8].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														;
+														data
+																.push([
+																		ganglia[8].hostName,
+																		ever8 ]);
+														var ever9 = ganglia[9].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														;
+														data
+																.push([
+																		ganglia[9].hostName,
+																		ever9 ]);
+														var ever10 = ganglia[10].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														;
+														data
+																.push([
+																		ganglia[10].hostName,
+																		ever10 ]);
+														var ever11 = ganglia[11].mem_total
+																/ 1024
+																/ 1024
+																/ sum;
+														;
+														data
+																.push([
+																		ganglia[11].hostName,
+																		ever11 ]);
+														series.setData(data);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : 'Memory shares'
+								},
+								credits : {
+									enabled : false
+								},
+								tooltip : {
+									pointFormat : '{series.name}: <b>{point.percentage:.1f}%</b>'
+								},
+								plotOptions : {
+									pie : {
+										allowPointSelect : true,
+										cursor : 'pointer',
+										dataLabels : {
+											enabled : true,
+											color : '#000000',
+											connectorColor : '#000000',
+											format : '<b>{point.name}</b>: {point.percentage:.1f} %'
+										}
+									}
+								},
+								series : [ {
+									type : 'pie',
+									name : 'Memory share'
+								} ]
+							};
+
+							chart = new Highcharts.Chart(ganglia_74);
+							chart = new Highcharts.Chart(ganglia_75);
+							chart = new Highcharts.Chart(ganglia_76);
+							chart = new Highcharts.Chart(ganglia_85);
+							chart = new Highcharts.Chart(ganglia_86);
+							chart = new Highcharts.Chart(ganglia_60);
+							chart = new Highcharts.Chart(ganglia_61);
+							chart = new Highcharts.Chart(ganglia_70);
+							chart = new Highcharts.Chart(ganglia_62);
+							chart = new Highcharts.Chart(ganglia_71);
+							chart = new Highcharts.Chart(ganglia_72);
+							chart = new Highcharts.Chart(ganglia_73);
+							chart = new Highcharts.Chart(node_memory_pie);
+						});
+	</script>
+
+	<jsp:include page="footer.jsp" flush="true"></jsp:include>

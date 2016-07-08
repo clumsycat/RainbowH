@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<script type="text/javascript" src="../js/jquery-1.11.2.min.js"></script>
+<script type="text/javascript" src="../js/highcharts.js"></script>
+<script type="text/javascript" src="../js/exporting.js"></script>
+<script type="text/javascript">
+	$(function() {
+		$(document)
+				.ready(
+						function() {
+							Highcharts.setOptions({
+								
+							});
+
+							var chart;
+							$('#container')
+									.highcharts(
+											{
+												chart : {
+													type : 'pie',
+													animation : Highcharts.svg // don't animate in old IE               
+													
+												},
+												title : {
+													text : 'Live random data'
+												},
+												credits : {
+													enabled : false
+												},
+												tooltip : {
+													pointFormat : '{series.name}: <b>{point.x} {point.percentage:.1f}%</b>'
+												},
+											
+										        exporting: {
+										            filename: 'custom-file-name'
+										        },
+												plotOptions : {
+													pie : {
+														allowPointSelect : true,
+														cursor : 'pointer',
+														dataLabels : {
+															enabled : false
+														},
+														showInLegend : true
+													}
+												},
+												series : [ {
+													name : 'Random data',
+													data : (function() {
+														// generate an array of random data                             
+														var data = [], time = (new Date())
+																.getTime(), i;
+
+														for (i = -19; i <= 0; i++) {
+															data
+																	.push({
+																		x : time
+																				+ i
+																				* 1000,
+																		y : Math
+																				.random()
+																	});
+														}
+														return data;
+													})()
+												} ]
+											});
+						});
+
+	});
+</script>
+</head>
+<body>
+	<p id="text"></p>
+
+	<div id="container" style="min-width: 700px; height: 400px"></div>
+
+</body>
+</html>

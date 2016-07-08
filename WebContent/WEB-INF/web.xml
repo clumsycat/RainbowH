@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app id="rainbowH" version="2.4" xmlns="http://java.sun.com/xml/ns/j2ee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+	<display-name>RainbowH</display-name>
+	<!-- 定义首页 -->
+	<welcome-file-list>
+		<welcome-file>index.jsp</welcome-file>
+	</welcome-file-list>
+
+	<servlet>
+		<description>Main-Daemon配置信息Servlet</description>
+		<display-name>DaemonProServlet</display-name>
+		<servlet-name>DaemonProServlet</servlet-name>
+		<servlet-class>cn.ac.ict.servlet.DaemonProServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>DaemonProServlet</servlet-name>
+		<url-pattern>/view/DaemonProServlet</url-pattern>
+	</servlet-mapping>
+	<servlet>
+		<description>HdfsServlet代理</description>
+		<display-name>HdfsServlet</display-name>
+		<servlet-name>HdfsServlet</servlet-name>
+		<servlet-class>cn.ac.ict.servlet.HdfsServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>HdfsServlet</servlet-name>
+		<url-pattern>/view/HdfsServlet</url-pattern>
+	</servlet-mapping>
+	<servlet>
+		<description>MonitorServlet代理</description>
+		<display-name>MonitorServlet</display-name>
+		<servlet-name>MonitorServlet</servlet-name>
+		<servlet-class>cn.ac.ict.servlet.MonitorServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>MonitorServlet</servlet-name>
+		<url-pattern>/view/MonitorServlet</url-pattern>
+	</servlet-mapping>
+		<servlet>
+		<description>AllState代理</description>
+		<display-name>AllState</display-name>
+		<servlet-name>AllState</servlet-name>
+		<servlet-class>cn.ac.ict.servlet.AllState</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>AllState</servlet-name>
+		<url-pattern>/view/AllState</url-pattern>
+	</servlet-mapping>
+	<listener>
+		<listener-class>cn.ac.ict.util.TaskTrigger</listener-class>
+	</listener>
+</web-app>

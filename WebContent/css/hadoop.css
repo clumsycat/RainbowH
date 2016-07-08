@@ -1,0 +1,195 @@
+
+
+body {
+  background-color : #ffffff;
+  font-family : sans-serif;
+}
+
+.small {
+  font-size : smaller;
+}
+
+div#dfsnodetable tr#row1, div.dfstable td.col1 {
+	font-weight : bolder;
+}
+
+div.dfstable th {
+    text-align:left;
+	vertical-align : top;
+}
+
+div.dfstable td#col3 {
+	text-align : right;
+}
+
+div#dfsnodetable caption {
+	text-align : left;
+}
+
+div#dfsnodetable a#title {
+	font-size : larger;
+	font-weight : bolder;
+}
+
+div#dfsnodetable td, th {
+        padding-bottom : 4px;
+        padding-top : 4px;       
+}
+
+div#dfsnodetable A:link, A:visited {
+	text-decoration : none;       
+}
+
+div#dfsnodetable th.header, th.headerASC, th.headerDSC {
+        padding-bottom : 8px;
+        padding-top : 8px;       
+}
+div#dfsnodetable th.header:hover, th.headerASC:hover, th.headerDSC:hover,
+                 td.name:hover {
+        text-decoration : underline;
+	cursor : pointer;
+}
+
+div#dfsnodetable td.blocks, td.size, td.pcused, td.adminstate, td.lastcontact {
+	text-align : right;
+}
+
+div#dfsnodetable .rowNormal .header {
+	background-color : #ffffff;
+}
+div#dfsnodetable .rowAlt, .headerASC, .headerDSC {
+	background-color : lightyellow;
+}
+
+.warning {
+        font-weight : bolder;
+        color : red;	
+}
+
+div.dfstable table {
+	white-space : pre;
+}
+
+table.storage, table.nodes {
+    border-collapse: collapse;
+}
+
+table.storage td {
+	padding:10px;
+	border:1px solid black;
+}
+
+table.nodes td {
+	padding:0px;
+	border:1px solid black;
+}
+
+div#dfsnodetable td, div#dfsnodetable th, div.dfstable td {
+	padding-left : 10px;
+	padding-right : 10px;
+	border:1px solid black;
+}
+
+td.perc_filled {
+  background-color:#AAAAFF;
+}
+
+td.perc_nonfilled {
+  background-color:#FFFFFF;
+}
+
+line.taskgraphline {
+  stroke-width:1;stroke-linecap:round;
+}
+
+#quicklinks {
+	margin: 0;
+	padding: 2px 4px;
+	position: fixed;
+	top: 0;
+	right: 0;
+	text-align: right;
+	font-weight: bold;
+}
+
+#quicklinks ul {
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+	font-weight: normal;
+}
+
+#quicklinks ul {
+	display: none;
+}
+
+#quicklinks a {
+	font-size: smaller;
+	text-decoration: none;
+}
+
+#quicklinks ul a {
+	text-decoration: underline;
+}
+
+span.failed {
+    color:red;
+}
+
+div.security {
+    width:100%;
+}
+
+#startupprogress table, #startupprogress th, #startupprogress td {
+  border-collapse: collapse;
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  padding: 5px;
+  text-align: left;
+}
+
+#startupprogress table {
+  border: 1px solid black;
+}
+
+.phase {
+  border-top: 1px solid black;
+  font-weight: bold;
+}
+
+.current {
+  font-style: italic;
+}
+
+.later {
+  color: gray;
+}
+
+.step .startupdesc {
+  text-indent: 20px;
+}
+
+#startupprogress span {
+  font-weight: bold;
+}
+
+.panel-success > .panel-heading {
+  color: #fff !important;
+  background-color: #5FA33E !important;
+}
+
+
+
+#ui-tabs > li > a {
+  color: #247000;
+}
+
+#ui-tabs .active a {
+  color: #fff;
+  background-color: #7AADE6;
+}
+
+#alert-panel {
+  margin-top:20px;
+  display: none;
+}

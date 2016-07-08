@@ -1,0 +1,1229 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../js/jquery-1.11.2.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="../js/bootstrap.min.js"></script>
+<link href="../css/bootstrap.min.css" rel="stylesheet">
+<script type="text/javascript" src="../js/highcharts.js"></script>
+<style>
+div .chart {
+	float: left;
+	padding: 5px;
+	margin: 20px;
+}
+</style>
+<title>实时监控</title>
+</head>
+<body>
+	<jsp:include page="header.jsp" flush="true" />
+	<div class="container">
+			<div class="btn-group btn-group-justified" role="group">
+			<a href="#" class="btn btn-default" role="button">Daemon</a>
+			<a href="chart-impala.jsp" class="btn btn-default" role="button">Impala</a>
+			<a href="chart-memcache.jsp" class="btn btn-default" role="button">Memcache</a>
+			<a href="chart-ganglia.jsp" class="btn btn-default" role="button">服务器情况</a>
+			<a href="chart-hdfs.jsp" class="btn btn-default" role="button">HDFS用量</a>
+		</div>
+			<h2>Daemon</h2>
+			<div id="dae-chart-sum" class="chart"
+				style="width: 400px; height: 300px; margin: 10 auto"></div>
+			<div id="dae-chart-86" class="chart"
+				style="width: 400px; height: 300px; margin: 10 auto"></div>
+			<div id="dae-chart-62" class="chart"
+				style="width: 400px; height: 300px; margin: 10 auto"></div>
+			<div id="dae-chart-85" class="chart"
+				style="width: 400px; height: 300px; margin: 10 auto"></div>
+			<div id="dae-chart-74" class="chart"
+				style="width: 400px; height: 300px; margin: 10 auto"></div>
+			<div id="dae-chart-60" class="chart"
+				style="width: 400px; height: 300px; margin: 10 auto"></div>
+			<div id="dae-chart-61" class="chart"
+				style="width: 400px; height: 300px; margin: 10 auto"></div>
+			
+	</div>
+
+	<script>
+		$(document)
+				.ready(
+						function() {
+							setInterval(function() {
+								$.ajax({
+									type : "GET",
+									url : "AllState",
+									dataType : "json",
+									success : function(data) {
+										var storage = window.localStorage;
+										storage.setItem("daemon", JSON
+												.stringify(data.Daemon));
+									}
+								});
+							}, 5000);
+							Highcharts.setOptions({
+								global : {
+									useUTC : false
+								},
+							});
+							//daemon86
+							var daemon_86 = {
+								chart : {
+									renderTo : 'dae-chart-86',
+									type : 'spline',
+									marginRight : 10,
+									events : {
+										load : function() {
+											var series_rec = this.series[0];
+											var series_ret = this.series[1];
+											var series_impala=this.series[2];
+											var series_mem=this.series[3];
+											var series_lru=this.series[4];
+											setInterval(
+													function() {
+														var x = (new Date())
+																.getTime(), y;
+														var storage = window.localStorage;
+														var daemon = JSON
+																.parse(storage
+																		.getItem("daemon"));
+
+														y = parseFloat(daemon[0].Receive);
+														series_rec.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[0].Return);
+														series_ret.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[0].Impala);
+														series_impala.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[0].Memcache);
+														series_mem.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[0]["Local LRU"]);
+														series_lru.addPoint([
+																x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时Daemon86'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : {
+									title : {
+										text : '个/s'
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								},
+								tooltip : {
+									formatter : function() {
+										return '<b>'
+												+ this.series.name
+												+ '</b><br/>'
+												+ Highcharts.dateFormat(
+														'%Y-%m-%d %H:%M:%S',
+														this.x)
+												+ '<br/>'
+												+ '<span style="color:#08c">'
+												+ Highcharts.numberFormat(
+														this.y, 2) + ' 个'
+												+ '</span>';
+									}
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '86  接受/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '86 返回set/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '86 Impala返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '86 memcached返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '86 本地LRU返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//daemon62
+							var daemon_62 = {
+								chart : {
+									renderTo : 'dae-chart-62',
+									type : 'spline',
+									marginRight : 10,
+									events : {
+										load : function() {
+											var series_rec = this.series[0];
+											var series_ret = this.series[1];
+											var series_impala=this.series[2];
+											var series_mem=this.series[3];
+											var series_lru=this.series[4];
+											setInterval(
+													function() {
+														var x = (new Date())
+																.getTime(), y;
+														var storage = window.localStorage;
+														var daemon = JSON
+																.parse(storage
+																		.getItem("daemon"));
+
+														y = parseFloat(daemon[1].Receive);
+														series_rec.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[1].Return);
+														series_ret.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[1].Impala);
+														series_impala.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[1].Memcache);
+														series_mem.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[1]["Local LRU"]);
+														series_lru.addPoint([
+																x, y ], true,
+																true);
+													}, 5111);
+										
+										}
+									}
+								},
+								title : {
+									text : '实时Daemon62'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : {
+									title : {
+										text : '个/s'
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								},
+								tooltip : {
+									shared:true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '62  接受/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '62 返回set/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '62 Impala返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '62 memcached返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '62 本地LRU返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//daemon74
+							var daemon_74 = {
+								chart : {
+									renderTo : 'dae-chart-74',
+									type : 'spline',
+									marginRight : 10,
+									events : {
+										load : function() {
+													var series_rec = this.series[0];
+													var series_ret = this.series[1];
+													var series_impala=this.series[2];
+													var series_mem=this.series[3];
+													var series_lru=this.series[4];
+													setInterval(
+															function() {
+																var x = (new Date())
+																		.getTime(), y;
+																var storage = window.localStorage;
+																var daemon = JSON
+																		.parse(storage
+																				.getItem("daemon"));
+
+																y = parseFloat(daemon[2].Receive);
+																series_rec.addPoint([
+																		x, y ], true,
+																		true);
+																y = parseFloat(daemon[2].Return);
+																series_ret.addPoint([
+																		x, y ], true,
+																		true);
+																y = parseFloat(daemon[2].Impala);
+																series_impala.addPoint([
+																		x, y ], true,
+																		true);
+																y = parseFloat(daemon[2].Memcache);
+																series_mem.addPoint([
+																		x, y ], true,
+																		true);
+																y = parseFloat(daemon[2]["Local LRU"]);
+																series_lru.addPoint([
+																		x, y ], true,
+																		true);
+															}, 5000);
+												}
+									}
+								},
+								title : {
+									text : '实时Daemon74'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : {
+									title : {
+										text : '个/s'
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								},
+								tooltip : {
+									shared:true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '74  接受/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '74 返回set/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '74 Impala返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '74 memcached返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '74 本地LRU返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//daemon85
+							var daemon_85 = {
+								chart : {
+									renderTo : 'dae-chart-85',
+									type : 'spline',
+									marginRight : 10,
+									events : {
+										load : function() {
+											var series_rec = this.series[0];
+											var series_ret = this.series[1];
+											var series_impala=this.series[2];
+											var series_mem=this.series[3];
+											var series_lru=this.series[4];
+											setInterval(
+													function() {
+														var x = (new Date())
+																.getTime(), y;
+														var storage = window.localStorage;
+														var daemon = JSON
+																.parse(storage
+																		.getItem("daemon"));
+
+														y = parseFloat(daemon[3].Receive);
+														series_rec.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[3].Return);
+														series_ret.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[3].Impala);
+														series_impala.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[3].Memcache);
+														series_mem.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[3]["Local LRU"]);
+														series_lru.addPoint([
+																x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时Daemon85'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : {
+									title : {
+										text : '个/s'
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								},
+								tooltip : {
+									shared:true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '85  接受/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '85 返回set/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '85 Impala返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '85 memcached返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '85 本地LRU返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+
+							//daemon60
+							var daemon_60 = {
+								chart : {
+									renderTo : 'dae-chart-60',
+									type : 'spline',
+									marginRight : 10,
+									events : {
+										load : function() {
+											var series_rec = this.series[0];
+											var series_ret = this.series[1];
+											var series_impala=this.series[2];
+											var series_mem=this.series[3];
+											var series_lru=this.series[4];
+											setInterval(
+													function() {
+														var x = (new Date())
+																.getTime(), y;
+														var storage = window.localStorage;
+														var daemon = JSON
+																.parse(storage
+																		.getItem("daemon"));
+
+														y = parseFloat(daemon[4].Receive);
+														series_rec.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[4].Return);
+														series_ret.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[4].Impala);
+														series_impala.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[4].Memcache);
+														series_mem.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[4]["Local LRU"]);
+														series_lru.addPoint([
+																x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时Daemon60'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : {
+									title : {
+										text : '个/s'
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								},
+								tooltip : {
+									shared:true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '60  接受/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '60 返回set/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '60 Impala返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '60 memcached返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '60 本地LRU返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//daemon61
+							var daemon_61 = {
+								chart : {
+									renderTo : 'dae-chart-61',
+									type : 'spline',
+									marginRight : 10,
+									events : {
+										load : function() {
+											var series_rec = this.series[0];
+											var series_ret = this.series[1];
+											var series_impala=this.series[2];
+											var series_mem=this.series[3];
+											var series_lru=this.series[4];
+											setInterval(
+													function() {
+														var x = (new Date())
+																.getTime(), y;
+														var storage = window.localStorage;
+														var daemon = JSON
+																.parse(storage
+																		.getItem("daemon"));
+
+														y = parseFloat(daemon[5].Receive);
+														series_rec.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[5].Return);
+														series_ret.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[5].Impala);
+														series_impala.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[5].Memcache);
+														series_mem.addPoint([
+																x, y ], true,
+																true);
+														y = parseFloat(daemon[5]["Local LRU"]);
+														series_lru.addPoint([
+																x, y ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '实时Daemon61'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : {
+									title : {
+										text : '个/s'
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								},
+								tooltip : {
+									shared:true
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : '61 接受/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '61 返回set/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '61 Impala返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '61 memcached返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '61 本地LRU返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							//daemon整体
+							var daemon_sum = {
+								chart : {
+									renderTo : 'dae-chart-sum',
+									type : 'spline',
+									marginRight : 10,
+									events : {
+										load : function() {
+											var series_rec = this.series[0];
+											var series_ret = this.series[1];
+											var series_impala=this.series[2];
+											var series_mem=this.series[3];
+											var series_lru=this.series[4];
+											setInterval(
+													function() {
+														var x = (new Date())
+																.getTime(), y;
+														var storage = window.localStorage;
+														var daemon = JSON
+																.parse(storage
+																		.getItem("daemon"));
+														var daemonServer;
+														var a = 0, b = 0, c = 0, d = 0, e = 0;
+														for (daemonServer in daemon) {
+															a += parseFloat(daemon[daemonServer].Receive);
+															b += parseFloat(daemon[daemonServer].Return);
+															c += parseFloat(daemon[daemonServer].Impala);
+															d += parseFloat(daemon[daemonServer].Memcache);
+															e += parseFloat(daemon[daemonServer]["Local LRU"]);
+														}
+
+														series_rec.addPoint([
+																x, a ], true,
+																true);
+
+														series_ret.addPoint([
+																x, b ], true,
+																true);
+
+														series_impala.addPoint([
+																x, c ], true,
+																true);
+
+														series_mem.addPoint([
+																x, d ], true,
+																true);
+
+														series_lru.addPoint([
+																x, e ], true,
+																true);
+													}, 5000);
+										}
+									}
+								},
+								title : {
+									text : '整体实时Daemon'
+								},
+								credits : {
+									enabled : false
+								},
+								xAxis : {
+									type : 'datetime',
+									tickPixelInterval : 150
+								},
+								yAxis : {
+									title : {
+										text : '个/s'
+									},
+									startOnTick : true, //为true时，设置min才有效
+									min : 0,
+									plotLines : [ {
+										value : 0,
+										width : 1,
+										color : '#808080'
+									} ]
+								},
+								tooltip : {
+									formatter : function() {
+										return '<b>'
+												+ this.series.name
+												+ '</b><br/>'
+												+ Highcharts.dateFormat(
+														'%Y-%m-%d %H:%M:%S',
+														this.x)
+												+ '<br/>'
+												+ '<span style="color:#08c">'
+												+ Highcharts.numberFormat(
+														this.y, 2) + ' 个'
+												+ '</span>';
+									}
+								},
+								legend : {
+									enabled : true
+								},
+								exporting : {
+									enabled : false
+								},
+								series : [
+										{
+											name : ' 接受/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '返回set/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : 'Impala返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : 'memcached返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										},
+										{
+											name : '本地LRU返回/s',
+											data : (function() {
+												// generate an array of random data
+												var data = [], time = (new Date())
+														.getTime(), i;
+
+												for (i = -19; i <= 0; i++) {
+													data.push({
+														x : time + i * 5000,
+														y : 0
+													});
+												}
+												return data;
+											})()
+										} ]
+							};
+							chart = new Highcharts.Chart(daemon_86);
+							chart = new Highcharts.Chart(daemon_62);
+							chart = new Highcharts.Chart(daemon_74);
+							chart = new Highcharts.Chart(daemon_85);
+							chart = new Highcharts.Chart(daemon_60);
+							chart = new Highcharts.Chart(daemon_61);
+							chart = new Highcharts.Chart(daemon_sum);
+						});
+	</script>
+
+	<jsp:include page="footer.jsp" flush="true"></jsp:include>

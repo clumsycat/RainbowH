@@ -1,0 +1,191 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../js/jquery-1.11.2.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="../js/bootstrap.min.js"></script>
+<link href="../css/bootstrap.min.css" rel="stylesheet">
+
+<title>RainBowH 用户界面</title>
+</head>
+<body>
+	<nav class="navbar navbar-default">
+	<div class="container-fluid">
+		<!-- Brand and toggle get grouped for better mobile display -->
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed"
+				data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+				<span class="sr-only">Toggle navigation</span> <span
+					class="icon-bar"></span> <span class="icon-bar"></span> <span
+					class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="../index.jsp">RainBowH</a>
+		</div>
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+		<div class="collapse navbar-collapse"
+			id="bs-example-navbar-collapse-1">
+			<ul class="nav navbar-nav">
+				<li><a href="../index.jsp">资源管理</a></li>
+				<li class="dropdown"><a href="#" class="dropdown-toggle"
+					data-toggle="dropdown" role="button" aria-expanded="false">组件监控
+						<span class="caret"></span>
+				</a>
+					<ul class="dropdown-menu" role="menu">
+						<li><a href="impala.jsp">Impala</a></li>
+						<li class="divider"></li>
+						<li><a href="hadoop.jsp">Hadoop</a></li>
+						<li><a href="hdfs.jsp">HDFS</a></li>
+					</ul></li>
+
+				<li class="dropdown"><a href="#" class="dropdown-toggle"
+					data-toggle="dropdown" role="button" aria-expanded="false">业务应用
+						<span class="caret"></span>
+				</a>
+					<ul class="dropdown-menu" role="menu">
+						<li><a href="search.jsp">查询（全文）</a></li>
+						<li class="divider"></li>
+						<li><a href="SQLedit.jsp">SQL编辑执行</a></li>
+						<li><a href="dataload.jsp">数据装载</a></li>
+						<li><a href="#">MR作业提交</a></li>
+					</ul></li>
+				<li class="dropdown"><a href="#" class="dropdown-toggle"
+					data-toggle="dropdown" role="button" aria-expanded="false">负载信息
+						<span class="caret"></span>
+				</a>
+					<ul class="dropdown-menu" role="menu">
+						<li><a href="#">实时负载</a></li>
+						<li><a href="#">历史统计</a></li>
+					</ul></li>
+			</ul>
+		</div>
+		<!-- /.navbar-collapse -->
+	</div>
+	<!-- /.container-fluid --> </nav>
+	<div class="modal" id="file-info" tabindex="-1" role="dialog"
+		aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">&times;</button>
+					<h4 class="modal-title" id="file-info-title">File information</h4>
+				</div>
+				<div class="modal-body" id="file-info-body">
+					<a id="file-info-download">Download</a>
+					<!--<a id="file-info-preview" style="cursor:pointer">Tail the file (last 32K)</a>-->
+					<hr />
+					<div class="panel panel-success" id="file-info-blockinfo-panel">
+						<div class="panel-heading">
+							Block information -- <select class="btn btn-default"
+								id="file-info-blockinfo-list">
+							</select>
+						</div>
+						<div class="panel-body" id="file-info-blockinfo-body"></div>
+					</div>
+					<div class="panel panel-info" id="file-info-tail"
+						style="display: none">
+						<div class="panel-heading">File contents</div>
+						<div class="panel-body">
+							<div class="input-group-sm">
+								<textarea class="form-control" style="height: 150px"
+									id="file-info-preview-body"></textarea>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-success" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="page-header">
+			<h1>Browse Directory</h1>
+		</div>
+		<div class="alert alert-danger" id="alert-panel" style="display: none">
+			<button type="button" class="close"
+				onclick="$('#alert-panel').hide();">&times;</button>
+			<div class="alert-body" id="alert-panel-body"></div>
+		</div>
+		<div class="row">
+			<form onsubmit="return false;">
+				<div class="input-group">
+					<input type="text" class="form-control" id="directory" /> <span
+						class="input-group-btn">
+						<button class="btn btn-default" width="50px" type="submit"
+							id="btn-nav-directory"></button>
+					</span>
+				</div>
+			</form>
+		</div>
+		<br />
+		<div id="panel"></div>
+	</div>
+
+	<script type="text/x-dust-template" id="tmpl-explorer">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Permission</th>
+            <th>Owner</th>
+            <th>Group</th>
+            <th>Size</th>
+            <th>Replication</th>
+            <th>Block Size</th>
+            <th>Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#FileStatus}
+          <tr>
+            <td>{type|helper_to_directory}{permission|helper_to_permission}{aclBit|helper_to_acl_bit}</td>
+            <td>{owner}</td>
+            <td>{group}</td>
+            <td>{length|fmt_bytes}</td>
+            <td>{replication}</td>
+            <td>{blockSize|fmt_bytes}</td>
+            <td><a style="cursor:pointer" inode-type="{type}" class="explorer-browse-links" inode-path="{pathSuffix}">{pathSuffix}</a></td>
+          </tr>
+          {/FileStatus}
+        </tbody>
+      </table>
+    </script>
+
+	<script type="text/x-dust-template" id="tmpl-block-info">
+      {#block}
+      <p>Block ID: {blockId}</p>
+      <p>Block Pool ID: {blockPoolId}</p>
+      <p>Generation Stamp: {generationStamp}</p>
+      <p>Size: {numBytes}</p>
+      {/block}
+      <p>Availability:
+        <ul>
+          {#locations}
+          <li>{hostName}</li>
+          {/locations}
+        </ul>
+      </p>
+    </script>
+	</script>
+	<script type="text/javascript" src="../js/dust-full-2.0.0.min.js">
+		
+	</script>
+	<script type="text/javascript" src="../js/dust-helpers-1.1.1.min.js">
+		
+	</script>
+	<script type="text/javascript" src="../js/dfs-dust.js">
+		
+	</script>
+	<script type="text/javascript" src="../js/explorer.js">
+		
+	</script>
+	<hr />
+</body>
+</html>
